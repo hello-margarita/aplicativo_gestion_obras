@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+{% block title %}Listado de Empleados{% endblock %}
+{% block content %}
+<div style="margin:30px 30px; width:calc(100% - 60px); font-family:'Raleway',sans-serif; background:#F2F2F2;">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600;700&display=swap');
+        body { font-family:'Raleway',sans-serif !important; }
+        .empleados-container { margin: 0; border-radius:12px; overflow:visible; }
+        .empleados-container h2 { margin-bottom:24px; font-family:'Raleway',sans-serif; color:#1a1a2e; }
+        .empleados-table { width:100%; border-collapse:separate; border-spacing:0; border-radius:12px; }
+        .empleados-table thead { border-radius:8px 8px 0 0; overflow:hidden; }
+        .empleados-table thead tr { background:#F2A81D; }
+        .empleados-table thead th { color:#1a1a2e; padding:16px 20px; text-align:left; border:none; white-space:nowrap; font-weight:700; }
+        .empleados-table th, .empleados-table td { padding:16px 20px; border:none; }
+        .empleados-table tbody tr { background:white; transition: background 0.2s ease; }
+        .empleados-table tbody tr:hover { background:#fff8ee; }
+        .empleados-table tbody tr + tr { border-bottom:1px solid #e8e8e8; }
+        .empleados-table td { color:#1a1a2e; }
+        .estado-activo { color: #246c18; font-weight: 700; }
+        .estado-retirado { display:inline-block; background:#4a4a4a; color:white; font-weight:700; font-size:0.82rem; padding:3px 10px; border-radius:999px; }
+        .obra-link { color: #1a1a2e; text-decoration: none; }
+        .obra-link:hover { text-decoration: underline; }
+    </style>
+    <div class="empleados-container">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+            <h2 class="titulo-pagina" style="margin-bottom:0;"><i class="ti ti-helmet" style="margin-right:8px;"></i>Listado de Empleados</h2>
+            <button onclick="document.getElementById('modal-empleado').style.display='flex'"
+                    style="background:var(--amarillo); color:#12121f; border:none; padding:10px 20px; border-radius:8px; font-family:'Raleway',sans-serif; font-weight:700; font-size:0.95rem; cursor:pointer; display:flex; align-items:center; gap:8px;">
+                <i class="ti ti-plus"></i> Agregar empleado
+            </button>
+        </div>
+
+        {% if trabajadores %}
+            <table class="empleados-table">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Cédula</th>
+                        <th>Cargo</th>
+                        <th>Obra asignada</th>
+                        <th>Fecha de Ingreso</th>
+                        <th>Salario</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in trabajadores %}
+                    <tr>
+                        <td>{{ item.trabajador.get_nombre() }}</td>
+                        <td>{{ item.trabajador.get_cedula() }}</td>
+                        <td>{{ item.cargo }}</td>
+                        <td><a class="obra-link" href="{{ url_for('detalle_obra', obra_id=item.obra_id) }}">{{ item.obra.get_nombre() }}</a></td>
+                        <td>{{ item.trabajador.get_fecha_ingreso_formateada() }}</td>
+                        <td>{{ item.trabajador.get_salario_formateado() }}</td>
+                        <td>
+                            {% if item.trabajador.get_estado_laboral() == 'Activo' %}
+                                <span class="estado-activo">Activo</span>
+                            {% else %}
+                                <span class="estado-retirado">Retirado</span>
+                            {% endif %}
+                        </td>
+                        <td style="white-space:nowrap;">
+                            {% if item.trabajador.get_estado_laboral() == 'Activo' %}
+                            <form method="POST" action="/obras/{{ item.obra_id }}/empleados/{{ item.emp_id }}/retirar" style="display:inline; margin:0;">
+                                <input type="hidden" name="return_to" value="/trabajadores">
+                                <button type="submit"
+                                        onclick="return confirm('¿Retirar a {{ item.trabajador.get_nombre() }} de la obra?')"
+                                        style="background:#4a4a4a; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; font-size:0.82rem; margin-right:4px;"
+                                        title="Retirar empleado">
+                                    <i class="ti ti-user-minus"></i>
+                                </button>
+                            </form>
+                            {% else %}
+                            <form method="POST" action="/obras/{{ item.obra_id }}/empleados/{{ item.emp_id }}/reactivar" style="display:inline; margin:0;">
+                                <input type="hidden" name="return_to" value="/trabajadores">
+                                <button type="submit"
+                                        onclick="return confirm('¿Reactivar a {{ item.trabajador.get_nombre() }}?')"
+                                        style="background:#246c18; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; font-size:0.82rem; margin-right:4px;"
+                                        title="Reactivar empleado">
+                                    <i class="ti ti-user-check"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                            <form method="POST" action="/obras/{{ item.obra_id }}/empleados/{{ item.emp_id }}/eliminar" style="display:inline; margin:0;">
+                                <input type="hidden" name="return_to" value="/trabajadores">
+                                <button type="submit"
+                                        onclick="return confirm('¿Eliminar permanentemente a {{ item.trabajador.get_nombre() }}?')"
+                                        style="background:#dc3545; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; font-size:0.82rem; font-weight:600;">
+                                    <i class="ti ti-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No hay trabajadores registrados.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal agregar empleado -->
+<div id="modal-empleado" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.65); justify-content:center; align-items:center; z-index:1000;">
+  <div style="background:#101D33; padding:36px; border-radius:12px; width:520px; max-width:90%; box-shadow:0 16px 48px rgba(0,0,0,0.5); border-top:3px solid var(--amarillo); max-height:90vh; overflow-y:auto;">
+    <h2 style="color:var(--amarillo); margin:0 0 16px 0; font-family:'Raleway',sans-serif;"><i class="ti ti-helmet" style="margin-right:8px;"></i>Agregar empleado</h2>
+    {% if request.args.get('error') == 'campos_vacios' %}
+    <div style="background:rgba(220,53,69,0.15); border-left:3px solid #dc3545; color:#ff8a8a; padding:10px 14px; border-radius:6px; margin-bottom:12px; font-size:0.9rem;">
+      <i class="ti ti-alert-circle" style="margin-right:6px;"></i>Nombre, cédula y salario son obligatorios.
+    </div>
+    {% endif %}
+    {% if request.args.get('error') == 'cedula_duplicada' %}
+    <div style="background:rgba(220,53,69,0.15); border-left:3px solid #dc3545; color:#ff8a8a; padding:10px 14px; border-radius:6px; margin-bottom:12px; font-size:0.9rem;">
+      <i class="ti ti-alert-circle" style="margin-right:6px;"></i>Este empleado ya está asignado a esa obra.
+    </div>
+    {% endif %}
+    <form method="POST" action="/trabajadores/nuevo" style="display:flex; flex-direction:column; gap:16px;">
+      <div>
+        <label style="color:#B0B8D4; display:block; margin-bottom:6px; font-size:0.85rem; text-transform:uppercase; letter-spacing:0.04em;">Obra <span style="color:var(--amarillo);">*</span></label>
+        <select name="obra_id" required style="width:100%; padding:12px; border-radius:6px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.07); color:white; box-sizing:border-box; font-family:'Raleway',sans-serif; font-size:0.95rem;">
+          {% for obra_id, obra in obras if obra.get_estado() not in ['Liquidada', 'Suspendida'] %}
+          <option value="{{ obra_id }}" style="color:#1a1a2e; background:white;">{{ obra.get_nombre() }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label style="color:#B0B8D4; display:block; margin-bottom:6px; font-size:0.85rem; text-transform:uppercase; letter-spacing:0.04em;">Cargo <span style="color:var(--amarillo);">*</span></label>
+        <select name="cargo" required style="width:100%; padding:12px; border-radius:6px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.07); color:white; box-sizing:border-box; font-family:'Raleway',sans-serif; font-size:0.95rem;">
+          <option value="Director de Obra"      style="color:#1a1a2e; background:white;">Director de Obra</option>
+          <option value="Arquitecto Residente"  style="color:#1a1a2e; background:white;">Arquitecto Residente</option>
+          <option value="Ingeniero Residente"   style="color:#1a1a2e; background:white;">Ingeniero Residente</option>
+          <option value="SISO"                  style="color:#1a1a2e; background:white;">SISO</option>
+          <option value="Oficial"               style="color:#1a1a2e; background:white;">Oficial</option>
+          <option value="Ayudante Práctico"     style="color:#1a1a2e; background:white;">Ayudante Práctico</option>
+          <option value="Ayudante"              style="color:#1a1a2e; background:white;">Ayudante</option>
+        </select>
+      </div>
+      <div>
+        <label style="color:#B0B8D4; display:block; margin-bottom:6px; font-size:0.85rem; text-transform:uppercase; letter-spacing:0.04em;">Nombre <span style="color:var(--amarillo);">*</span></label>
+        <input type="text" name="nombre" required placeholder="Nombre completo"
+               pattern="[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s]+" title="Solo letras y espacios"
+               style="width:100%; padding:12px; border-radius:6px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.07); color:white; box-sizing:border-box; font-family:'Raleway',sans-serif; font-size:0.95rem;">
+      </div>
+      <div>
+        <label style="color:#B0B8D4; display:block; margin-bottom:6px; font-size:0.85rem; text-transform:uppercase; letter-spacing:0.04em;">Cédula <span style="color:var(--amarillo);">*</span></label>
+        <input type="text" name="cedula" required placeholder="Sin puntos"
+               inputmode="numeric" pattern="[0-9]+" title="Solo números"
+               style="width:100%; padding:12px; border-radius:6px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.07); color:white; box-sizing:border-box; font-family:'Raleway',sans-serif; font-size:0.95rem;">
+      </div>
+      <div>
+        <label style="color:#B0B8D4; display:block; margin-bottom:6px; font-size:0.85rem; text-transform:uppercase; letter-spacing:0.04em;">Fecha de ingreso <span style="color:var(--amarillo);">*</span></label>
+        <input type="date" name="fecha_ingreso" required
+               style="width:100%; padding:12px; border-radius:6px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.07); color:white; box-sizing:border-box; font-family:'Raleway',sans-serif; font-size:0.95rem; color-scheme:dark;">
+      </div>
+      <div>
+        <label style="color:#B0B8D4; display:block; margin-bottom:6px; font-size:0.85rem; text-transform:uppercase; letter-spacing:0.04em;">Salario <span style="color:var(--amarillo);">*</span></label>
+        <input type="text" name="salario" required placeholder="Ej: 2500000"
+               inputmode="numeric" pattern="[0-9]+" title="Solo números"
+               style="width:100%; padding:12px; border-radius:6px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.07); color:white; box-sizing:border-box; font-family:'Raleway',sans-serif; font-size:0.95rem;">
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:8px;">
+        <button type="button" onclick="document.getElementById('modal-empleado').style.display='none'"
+                style="background:rgba(255,255,255,0.08); color:#B0B8D4; border:1px solid rgba(255,255,255,0.15); padding:10px 22px; border-radius:6px; cursor:pointer; font-family:'Raleway',sans-serif; font-weight:600;">Cancelar</button>
+        <button type="submit"
+                style="background:var(--amarillo); color:#12121f; border:none; padding:10px 22px; border-radius:6px; cursor:pointer; font-family:'Raleway',sans-serif; font-weight:700;">Agregar empleado</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  if (['campos_vacios','cedula_duplicada'].includes(new URLSearchParams(window.location.search).get('error'))) {
+    document.getElementById('modal-empleado').style.display = 'flex';
+  }
+</script>
+{% endblock %}
+

@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% block title %}Detalle de Obra - {{ obra.get_nombre() }}{% endblock %}
+{% block content %}
+    {% if request.args.get('error') == 'cedula_duplicada' %}
+    <div style="background:#fde8e8; border-left:4px solid #e53935; color:#b71c1c; padding:14px 18px; border-radius:8px; margin-bottom:16px; font-weight:600;">
+        <i class="ti ti-alert-circle" style="margin-right:8px;"></i>Este empleado ya está asignado a esta obra.
+    </div>
+    {% endif %}
+    <div class="tarjeta">
+        <!-- Nombre + botón -->
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:6px;">
+            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                <h2 style="margin:0;">{{ obra.get_nombre() }}</h2>
+                {% if obra.esta_vencida() and obra.get_estado() != 'Liquidada' %}
+                <span style="display:inline-flex; align-items:center; gap:4px; background:#dc3545; color:white; font-size:0.78rem; font-weight:700; padding:4px 10px; border-radius:999px; white-space:nowrap;">
+                    <i class="ti ti-alert-triangle"></i> Atrasada
+                </span>
+                {% endif %}
+            </div>
+            <a class="boton boton-badge" href="/obras" style="background:var(--amarillo); color:#12121f; white-space:nowrap; flex-shrink:0;"><i class="ti ti-arrow-left" style="margin-right:6px;"></i>Regresar al listado de obras</a>
+        </div>
+
+        <!-- Ubicación -->
+        <p style="margin:0 0 20px 0; color:var(--texto-secundario); font-size:0.95rem;">
+            <strong style="color:var(--texto-claro);">Ubicación:</strong> {{ obra.get_ubicacion() }}
+        </p>
+
+        <!-- Tres cajas de datos -->
+        {% set gasto = obra.calcular_gasto_total() %}
+        {% set presupuesto = obra.get_presupuesto() or 0 %}
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:20px;">
+            <div style="background:rgba(255,255,255,0.07); border-radius:8px; padding:14px 18px;">
+                <div style="font-size:0.78rem; color:var(--texto-secundario); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.05em;">Presupuesto total</div>
+                <div style="font-weight:700; font-size:1.1rem; color:var(--texto-claro);">${{ '{:,.0f}'.format(presupuesto).replace(',', '.') }}</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.07); border-radius:8px; padding:14px 18px;">
+                <div style="font-size:0.78rem; color:var(--texto-secundario); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.05em;">Costo a la fecha</div>
+                <div style="font-weight:700; font-size:1.1rem; color:var(--amarillo);">${{ '{:,.0f}'.format(gasto).replace(',', '.') }}</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.07); border-radius:8px; padding:14px 18px;">
+                <div style="font-size:0.78rem; color:var(--texto-secundario); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.05em;">Avance de obra</div>
+                <div style="font-weight:700; font-size:1.1rem; color:var(--texto-claro);">{{ obra.get_porcentaje_avance() }}%</div>
+            </div>
+        </div>
+
+        <!-- Barra de progreso -->
+        <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <span style="font-size:0.85rem; color:var(--texto-secundario);">Progreso de ejecución</span>
+                <span style="font-size:0.85rem; font-weight:700; color:var(--amarillo);">{{ obra.get_porcentaje_avance() }}%</span>
+            </div>
+            <div style="background:rgba(255,255,255,0.12); border-radius:6px; height:10px; overflow:hidden;">
+                <div style="background:var(--amarillo); width:{{ obra.get_porcentaje_avance() }}%; height:10px; border-radius:6px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tarjeta">
+        <h2>Empleados asignados al proyecto</h2>
+        {% if obra.get_trabajadores() %}
+            <table>
+                <thead>
+                    <tr><th>Nombre</th><th>Cédula</th><th>Cargo</th><th>Fecha de Ingreso</th><th>Salario</th><th>Estado</th></tr>
+                </thead>
+                <tbody>
+                    {% for trabajador in obra.get_trabajadores() %}
+                    <tr>
+                        <td>{{ trabajador.get_nombre() }}</td>
+                        <td>{{ trabajador.get_cedula() }}</td>
+                        <td>{{ trabajador.get_cargo() }}</td>
+                        <td>{{ trabajador.get_fecha_ingreso_formateada() }}</td>
+                        <td>{{ trabajador.get_salario_formateado() }}</td>
+                        <td>{{ trabajador.get_estado_laboral() }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No hay empleados registrados en esta obra.</p>
+        {% endif %}
+
+    </div>
+
+    <div class="tarjeta">
+        <h2>Registro de Materiales</h2>
+        {% if obra.get_materiales() %}
+            {% set ns = namespace(total=0) %}
+            {% for material in obra.get_materiales() %}
+                {% set ns.total = ns.total + material.calcular_costo() %}
+            {% endfor %}
+            <table>
+                <thead>
+                    <tr><th>Material</th><th>Unidad</th><th>Precio unitario</th><th>Cantidad</th><th>Costo total</th></tr>
+                </thead>
+                <tbody>
+                    {% for material in obra.get_materiales() %}
+                    <tr>
+                        <td>{{ material.get_nombre() }}</td>
+                        <td>{{ material.get_unidad() }}</td>
+                        <td>${{ '{:,.0f}'.format(material.get_precio_unitario()).replace(',', '.') }}</td>
+                        <td>{{ material.get_cantidad() }}</td>
+                        <td>${{ '{:,.0f}'.format(material.calcular_costo()).replace(',', '.') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div style="display:flex; justify-content:flex-end; margin-top:14px;">
+                <div style="background:var(--amarillo); color:#12121f; padding:12px 24px; border-radius:8px; font-family:'Raleway',sans-serif; font-weight:700; font-size:1.05rem; letter-spacing:0.03em;">
+                    TOTAL MATERIALES &nbsp;|&nbsp; ${{ '{:,.0f}'.format(ns.total).replace(',', '.') }}
+                </div>
+            </div>
+        {% else %}
+            <p>No hay materiales registrados en esta obra.</p>
+        {% endif %}
+
+    </div>
+{% endblock %}

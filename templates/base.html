@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}CivilOps{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Raleway:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+    <style>
+        :root{
+            --sidebar-bg:#0D1229;
+            --fondo:#161C40;
+            --content-bg:#F2F2F2;
+            --card:#1E2550;
+            --amarillo:#F2A81D;
+            --naranja:#F28322;
+            --texto-claro:#FFFFFF;
+            --texto-secundario:#B0B8D4;
+            --texto-oscuro:#1a1a2e;
+            --sidebar-width:220px;
+        }
+        html,body{height:100%; background: var(--content-bg);}
+        body { font-family: 'Raleway', sans-serif; margin: 0; padding: 0; background: var(--content-bg); color: var(--texto-oscuro); }
+
+        /* Sidebar */
+        .sidebar{ position:fixed; left:0; top:0; bottom:0; width:var(--sidebar-width); background:var(--card); color:var(--texto-claro); padding:22px 14px; box-sizing:border-box; border-right:2px solid var(--amarillo); font-family:'Google Sans Flex', sans-serif; }
+        .logo{ font-family:'Google Sans Flex', sans-serif; font-size:1.6rem; font-weight:700; display:flex; gap:8px; align-items:center; margin-bottom:50px; }
+        .logo .ico{ font-size:26px; }
+        .menu{ margin-top:18px; display:flex; flex-direction:column; gap:10px; }
+        .menu a{ display:flex; gap:12px; align-items:center; padding:12px 16px; border-radius:8px; color:var(--texto-claro); text-decoration:none; font-weight:600; }
+        .menu a .ico{ font-size:24px; }
+        .menu a.active{ background:var(--amarillo); color:#12121f; }
+
+        /* Main content */
+        .main{ margin-left:var(--sidebar-width); padding:26px; min-height:100vh; background: var(--content-bg); color: var(--texto-oscuro); }
+        .container { width: 92%; max-width:1100px; margin: 0 auto; }
+
+        /* Cards and obra styles reused */
+        .top-cards{ display:grid; grid-template-columns: repeat(4,1fr); gap:16px; margin-bottom:18px; }
+        .card { background: var(--card); border-radius: 10px; padding: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.45); display:flex; align-items:center; justify-content:space-between; transition: box-shadow .25s ease, transform .25s ease; color: var(--texto-claro); }
+        .card:hover{ box-shadow: 0 10px 24px rgba(242,131,34,0.3); transform: translateY(-2px); }
+        .card h3{ margin:0; font-family:'Raleway', sans-serif; font-size:1rem; color: var(--texto-claro); font-weight:700; }
+        .card .num{ font-size:2rem; font-weight:700; color: var(--texto-claro); }
+        .card .icon{ font-size:1.8rem; color: var(--texto-claro); }
+
+        /* Tables styling */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; color: var(--texto-oscuro); }
+        th, td { padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.04); text-align: left; }
+        th{ background: var(--amarillo); color:#12121f; font-family:'Raleway',sans-serif; font-weight:700; }
+        tbody tr:nth-child(odd){ background: rgba(0,0,0,0.02); }
+        tbody tr:nth-child(even){ background: rgba(0,0,0,0.00); }
+        .card { color: var(--texto-claro); }
+        .tarjeta { background: var(--card); color: var(--texto-claro); padding:18px; border-radius:10px; box-shadow: 0 6px 16px rgba(0,0,0,0.45); margin-bottom:18px; }
+        .tarjeta table { color: var(--texto-claro); }
+        .main h2 { color: var(--texto-oscuro); }
+        .tarjeta h2 { color: var(--texto-claro); }
+        .titulo-pagina { display:inline-block; border-bottom:3px solid var(--amarillo); padding-bottom:8px; margin-bottom:24px; }
+
+        .boton { display: inline-block; background: var(--naranja); color: var(--texto-claro); padding: 10px 12px; border-radius: 6px; text-decoration: none; font-weight:600; font-family: 'Raleway', sans-serif; }
+        .boton-small{ padding:6px 10px; font-size:0.9rem; }
+
+        /* Modal styles used on dashboard */
+        .modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,0.6); display:none; align-items:center; justify-content:center; z-index:40; }
+        .modal{ background:var(--card); padding:30px; border-radius:10px; width:min(90%,520px); min-width:320px; max-width:90%; color:var(--texto-claro); box-shadow: 0 12px 32px rgba(0,0,0,0.45); }
+        .modal h3{ margin-top:0; font-family:'Raleway', sans-serif; color: var(--amarillo); }
+        .field{ margin-top:20px; margin-bottom:20px; }
+        label{ display:block; margin-bottom:6px; color:var(--texto-claro); }
+        input[type=text]{ width:100%; padding:12px; border-radius:6px; border:1px solid rgba(255,255,255,0.12); background:transparent; color:var(--texto-claro); }
+        .modal-actions{ margin-top:14px; display:flex; gap:10px; justify-content:flex-end; }
+
+        @media (max-width:1100px){ .top-cards{ grid-template-columns: repeat(2,1fr); } }
+
+        /* Tablet: 768px – 1024px */
+        @media (min-width:768px) and (max-width:1024px){
+            .main{ padding:18px; }
+        }
+
+        /* Móvil: < 768px */
+        @media (max-width:767px){
+            .sidebar{ display:none; }
+            .main{ margin-left:0; padding:14px; }
+            .container{ width:100%; }
+        }
+
+        /* Obras grid (dashboard sección) */
+        .obra-grid{ display:grid; grid-template-columns: repeat(3,1fr); gap:18px; }
+        @media (max-width:1100px){ .obra-grid{ grid-template-columns: repeat(2,1fr); } }
+        @media (max-width:700px){ .obra-grid{ grid-template-columns: 1fr; } }
+        .obra-card { background: #FFFFFF; color: var(--texto-oscuro); border-left:6px solid var(--amarillo); border-radius:8px; padding:20px; display:flex; flex-direction:column; justify-content:space-between; min-height:200px; box-sizing:border-box; overflow:hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .obra-info { display:flex; flex-direction:column; gap:8px; }
+        .obra-info .nombre{ font-family:'Raleway', sans-serif; font-size:1.15rem; margin:0; color: var(--texto-oscuro); font-weight:700; }
+        .obra-info .ubicacion{ color: var(--texto-oscuro); font-size:0.95rem; }
+        .obra-info .codigo{ color: var(--texto-oscuro); font-size:0.9rem; }
+        .obra-info .presupuesto{ color: var(--texto-oscuro); font-size:0.95rem; font-weight:600; }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <a class="logo" href="{{ url_for('index') }}" style="text-decoration:none; color:var(--texto-claro);"><i class="ti ti-cone ico"></i><div>CivilOps</div></a>
+        <nav class="menu">
+            <a href="{{ url_for('index') }}" class="{% if active=='dashboard' %}active{% endif %}"><i class="ti ti-layout-dashboard ico"></i> Dashboard</a>
+            <a href="{{ url_for('obras') }}" class="{% if active=='obras' %}active{% endif %}"><i class="ti ti-building-skyscraper ico"></i> Obras</a>
+            <a href="{{ url_for('trabajadores') }}" class="{% if active=='trabajadores' %}active{% endif %}"><i class="ti ti-helmet ico"></i> Empleados</a>
+            <a href="{{ url_for('materiales') }}" class="{% if active=='materiales' %}active{% endif %}"><i class="ti ti-packages ico"></i> Materiales</a>
+        </nav>
+    </aside>
+
+    <main class="main">
+        <div class="container">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+</body>
+</html>

@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  .dashboard-card {
+    background: #1E2550;
+    padding: 20px 24px;
+    border-radius: 12px;
+    color: white;
+    height: 130px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    transition: all 0.3s ease;
+  }
+  .dashboard-card:hover {
+    box-shadow: 0 0 20px rgba(242, 168, 29, 0.4);
+    transform: translateY(-3px);
+  }
+  .dashboard-card .card-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #B0B8D4;
+    margin-bottom: 10px;
+    letter-spacing: 0.02em;
+  }
+  .dashboard-card .card-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: white;
+  }
+  .dashboard-card .card-meta {
+    color: white;
+  }
+
+  /* Grids responsivos */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+    margin: 24px 24px 0 24px;
+  }
+  .obras-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  @media (max-width: 767px) {
+    .cards-grid { grid-template-columns: repeat(2, 1fr); margin: 16px 16px 0 16px; }
+    .obras-grid  { grid-template-columns: 1fr; }
+  }
+  @media (min-width: 768px) and (max-width: 1024px) {
+    .cards-grid { grid-template-columns: repeat(3, 1fr); }
+    .obras-grid  { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+
+<!-- Cards superiores -->
+<div class="cards-grid">
+  <div class="dashboard-card">
+    <div class="card-title"><i class="ti ti-building-skyscraper" style="font-size:30px; margin-right:10px;"></i>Total Obras</div>
+    <div class="card-value"><span style="color:#F2A81D; font-weight:700; font-size:1.75rem;">{{ total_obras }}</span> <span class="card-meta">| {{ obras_en_curso }} en curso</span></div>
+  </div>
+  <div class="dashboard-card">
+    <div class="card-title"><i class="ti ti-coin" style="font-size:30px; margin-right:10px;"></i>Presupuesto Total</div>
+    <div class="card-value">{{ presupuesto_total }}</div>
+  </div>
+  <div class="dashboard-card">
+    <div class="card-title"><i class="ti ti-receipt" style="font-size:30px; margin-right:10px;"></i>Inversión total</div>
+    <div class="card-value" style="color:#F2A81D;">${{ '{:,.0f}'.format(gasto_total).replace(',', '.') }}</div>
+  </div>
+  <div class="dashboard-card">
+    <div class="card-title"><i class="ti ti-users" style="font-size:30px; margin-right:10px;"></i>Total Empleados</div>
+    <div class="card-value">{{ total_trabajadores }}</div>
+  </div>
+  <div class="dashboard-card" style="cursor:pointer; border:2px dashed rgba(242,168,29,0.4);"
+       onclick="document.getElementById('modal-obra').style.display='flex'">
+    <div class="card-title"><i class="ti ti-plus" style="font-size:30px; margin-right:10px;"></i>Nueva Obra</div>
+    <div class="card-value" style="color:#F2A81D; font-size:1.75rem;">+ Crear</div>
+  </div>
+</div>
+
+<!-- Sección obras -->
+<div style="margin:24px; margin-top:60px;">
+  <h2 style="display:block; text-align:center; font-weight:900; color:var(--texto-oscuro); margin-bottom:32px;">Obras en ejecución</h2>
+  <div class="obras-grid">
+    {% for obra in lista_obras %}
+    <div style="background:white; border-left:4px solid #F2A81D; padding:20px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1); display:flex; flex-direction:column; justify-content:space-between;">
+      <div>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:6px;">
+          <h3 style="color:#1a1a2e; margin:0; font-family:'Raleway',sans-serif;">{{ obra.get_nombre() }}</h3>
+          {% if obra.esta_vencida() and obra.get_estado() != 'Liquidada' %}
+          <span style="display:inline-flex; align-items:center; gap:4px; background:#dc3545; color:white; font-size:0.72rem; font-weight:700; padding:3px 8px; border-radius:999px; white-space:nowrap;">
+            <i class="ti ti-alert-triangle"></i> Atrasada
+          </span>
+          {% endif %}
+        </div>
+        <p style="color:#555; font-size:0.9rem; margin:0 0 4px 0;"><i class="ti ti-map-pin" style="font-size:14px; color:#F2A81D; margin-right:4px;"></i>{{ obra.get_ubicacion() }}</p>
+        {% if obra.get_codigo() %}
+          <p style="color:#888; font-size:0.82rem; margin:0 0 6px 0;"><i class="ti ti-barcode" style="font-size:14px; color:#F2A81D; margin-right:4px;"></i>{{ obra.get_codigo() }}</p>
+        {% endif %}
+        <p style="font-weight:700; color:#1a1a2e; margin:0 0 4px 0;"><i class="ti ti-cash" style="font-size:14px; color:#F2A81D; margin-right:4px;"></i>{{ obra.get_presupuesto_formateado() }}</p>
+        <p style="color:#888; font-size:0.82rem; margin:0 0 10px 0;"><i class="ti ti-calendar" style="font-size:14px; color:#F2A81D; margin-right:4px;"></i>Inicio: {{ obra.get_fecha_inicio() }}</p>
+        <div style="background:#e8e8e8; border-radius:4px; height:7px; margin-bottom:4px;">
+          {% set p = obra.get_porcentaje_avance() %}
+          <div style="background:
+            {% if p < 30 %}linear-gradient(90deg, #ef9a9a, #c62828)
+            {% elif p < 60 %}linear-gradient(90deg, #ffe082, #f57f17)
+            {% else %}linear-gradient(90deg, #a5d6a7, #2e7d32)
+            {% endif %};
+            width:{{ p }}%; height:7px; border-radius:4px;"></div>
+        </div>
+        <p style="font-size:0.8rem; color:#888; text-align:right; margin:4px 0 14px 0;">Avance: {{ obra.get_porcentaje_avance() }}%</p>
+      </div>
+      <a href="/obras/{{ loop.index0 }}"
+         style="display:block; background:#F2A81D; color:#12121f; text-align:center; padding:10px; border-radius:6px; text-decoration:none; font-weight:700; font-family:'Raleway',sans-serif;">
+        <i class="ti ti-eye" style="margin-right:6px;"></i>Ver detalle
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Modal nueva obra -->
+<div id="modal-obra" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.65); justify-content:center; align-items:center; z-index:1000;">
+  <div style="background:#101D33; padding:36px; border-radius:12px; width:500px; max-width:90%; box-shadow:0 16px 48px rgba(0,0,0,0.5); border-top:3px solid var(--amarillo);">
+    <h2 style="color:var(--amarillo); margin:0 0 24px 0; font-family:'Raleway',sans-serif;"><i class="ti ti-plus" style="margin-right:8px;"></i>Crear nueva obra</h2>
+    {% if request.args.get('error') == 'campos_vacios' %}
+    <div style="background:rgba(220,53,69,0.15); border-left:3px solid #dc3545; color:#ff8a8a; padding:10px 14px; border-radius:6px; margin-bottom:8px; font-size:0.9rem;">
+      <i class="ti ti-alert-circle" style="margin-right:6px;"></i>El nombre y la ubicación no pueden estar vacíos.
+    </div>
+    {% endif %}
+    {% if request.args.get('error') == 'fechas_invalidas' %}
+    <div style="background:rgba(220,53,69,0.15); border-left:3px solid #dc3545; color:#ff8a8a; padding:10px 14px; border-radius:6px; margin-bottom:8px; font-size:0.9rem;">
+      <i class="ti ti-alert-circle" style="margin-right:6px;"></i>La fecha de inicio no puede ser posterior a la fecha límite.
+    </div>
+    {% endif %}
+    <form method="POST" action="/crear_obra" style="display:flex; flex-direction:column; gap:16px;">
+      <div>
+        <label style="color:#B0B8D4; display:block; margin-bottom:6px; font-size:0.85rem; text-transform:none; letter-spacing:0;">Nombre de la obra <span style="color:var(--amarillo);">*</span></label>
+        <input type="text" name="nombre" required placeholder="Nombre de la obra"
+               pattern="[A-Za-z0-9áéíóúÁÉÍÓÚüÜñÑ\s]+"
+               title="Solo se permiten letras, números y espacios"
+               style="width:100%; padding:12px; border-radius:6px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.07); color:white; box-sizing:border-box; font-family:'Raleway',sans-serif; font-size:0.95rem;">
+      </div>
+      <div>
+        <label style="color:#B0B8D4; display:block; margin-bottom:6px; font-size:0.85rem; text-transform:none; letter-spacing:0;">Ubicación <span style="color:var(--amarillo);">*</span></label>
+        <input type="text" name="ubicacion" required placeholder="Dirección o sector de la obra"
+               pattern="[A-Za-z0-9áéíóúÁÉÍÓÚüÜñÑ\s\-\,\.\#]+"
+               title="Solo se permiten letras, números y espacios"
+               style="width:100%; padding:12px; border-radius:6px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.07); color:white; box-sizing:border-box; font-family:'Raleway',sans-serif; font-size:0.95rem;">
+      </div>
+      <div>
+        <label style="color:#B0B8D4; display:block; margin-bottom:6px; font-size:0.85rem; text-transform:none; letter-spacing:0;">Código de obra</label>
+        <input type="text" name="codigo" placeholder="Ej: OBR-2026-001"
+               pattern="[A-Za-z0-9áéíóúÁÉÍÓÚüÜñÑ\s\-\_]+"
+               title="Solo se permiten letras, números, espacios, guion medio y guion bajo"
+               style="width:100%; padding:12px; border-radius:6px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.07); color:white; box-sizing:border-box; font-family:'Raleway',sans-serif; font-size:0.95rem;">
+      </div>
+      <div>
+        <label style="color:#B0B8D4; display:block; margin-bottom:6px; font-size:0.85rem; text-transform:none; letter-spacing:0;">Fecha de inicio <span style="color:var(--amarillo);">*</span></label>
+        <input type="date" name="fecha_inicio" id="fecha_inicio_obra" required
+               style="width:100%; padding:12px; border-radius:6px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.07); color:white; box-sizing:border-box; font-family:'Raleway',sans-serif; font-size:0.95rem; color-scheme:dark;"
+               onchange="document.getElementById('fecha_fin_obra').min = this.value;">
+      </div>
+      <div>
+        <label style="color:#B0B8D4; display:block; margin-bottom:6px; font-size:0.85rem; text-transform:none; letter-spacing:0;">Fecha límite (Due date) <span style="color:var(--amarillo);">*</span></label>
+        <input type="date" name="fecha_fin" id="fecha_fin_obra" required
+               style="width:100%; padding:12px; border-radius:6px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.07); color:white; box-sizing:border-box; font-family:'Raleway',sans-serif; font-size:0.95rem; color-scheme:dark;"
+               onchange="document.getElementById('fecha_inicio_obra').max = this.value;">
+      </div>
+      <div>
+        <label style="color:#B0B8D4; display:block; margin-bottom:6px; font-size:0.85rem; text-transform:none; letter-spacing:0;">Presupuesto aprobado <span style="color:var(--amarillo);">*</span></label>
+        <input type="text" name="presupuesto" required
+               inputmode="numeric" pattern="[0-9]+" title="Solo se permiten números"
+               placeholder="Ej: 500000000"
+               style="width:100%; padding:12px; border-radius:6px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.07); color:white; box-sizing:border-box; font-family:'Raleway',sans-serif; font-size:0.95rem;">
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:8px;">
+        <button type="button" onclick="document.getElementById('modal-obra').style.display='none'"
+                style="background:rgba(255,255,255,0.08); color:#B0B8D4; border:1px solid rgba(255,255,255,0.15); padding:10px 22px; border-radius:6px; cursor:pointer; font-family:'Raleway',sans-serif; font-weight:600;">Cancelar</button>
+        <button type="submit"
+                style="background:var(--amarillo); color:#12121f; border:none; padding:10px 22px; border-radius:6px; cursor:pointer; font-family:'Raleway',sans-serif; font-weight:700;">Crear obra</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  if (['campos_vacios','fechas_invalidas'].includes(new URLSearchParams(window.location.search).get('error'))) {
+    document.getElementById('modal-obra').style.display = 'flex';
+  }
+</script>
+{% endblock %}
